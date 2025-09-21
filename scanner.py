@@ -1,4 +1,3 @@
-# scanner.py
 print(">>> Running scanner.py from:", __file__)
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -63,7 +62,6 @@ def diag():
 
 @app.route('/scan', methods=['GET', 'POST'])
 def scan_network():
-    # Get target IP/hostname
     if request.method == 'GET':
         target_raw = request.args.get('ip')
         fast = request.args.get('fast', 'false').lower() in ('1','true','yes')
@@ -82,13 +80,11 @@ def scan_network():
     is_ipv6 = False
     is_private = False
 
-    # Try parsing as IP or hostname
     try:
         ip_obj = ipaddress.ip_address(target_raw)
         is_ipv6 = ip_obj.version == 6
         is_private = ip_obj.is_private
     except ValueError:
-        # Try hostname resolution
         try:
             resolved = socket.getaddrinfo(target_raw, None)[0][4][0]
             ip_obj = ipaddress.ip_address(resolved)
@@ -101,7 +97,6 @@ def scan_network():
     if not nmap_exe:
         return jsonify({"error": "nmap binary not found. Install Nmap and ensure it's on PATH."}), 500
 
-    # Skip ping automatically for IPv6 or localhost
     if target_raw.lower() in ('127.0.0.1', 'localhost', '::1'):
         skip_ping = True
         is_private = True
@@ -126,13 +121,9 @@ def scan_network():
         except Exception as e:
             logger.debug("ARP pre-scan failed or returned no MACs: %s", e)
 
-    # Build nmap arguments
     args = ['-sT', '-sV']
-
-    # Skip OS detection on IPv6 to avoid Windows interface errors
     if not is_ipv6:
         args.append('-O')
-
     if fast:
         args.append('-F')
     if skip_ping or is_ipv6:
@@ -191,5 +182,6 @@ def scan_network():
         return jsonify(results[0])
     return jsonify({"hosts": results})
 
-if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=True, use_reloader=False)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
