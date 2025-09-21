@@ -1,4 +1,4 @@
-# Network Scanner
+# Network-Scanner
 
 A web-based Network Scanner that allows scanning of **IPv4 and IPv6 addresses** to detect live hosts, open ports, and services. Built with **Flask** and **Nmap**, it provides a user-friendly web interface for network analysis.
 
@@ -16,7 +16,8 @@ A web-based Network Scanner that allows scanning of **IPv4 and IPv6 addresses** 
 
 ## About Us
 
-**Developer:** Your Name  
+**Developer:** Ashish
+
 **Vision:** To create a simple and accessible network scanning tool for learning and educational purposes.  
 **Goal:** To provide an intuitive interface for scanning and analyzing networks without using complex command-line tools.
 
