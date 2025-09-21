@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #E0E0E0;
+        }
+        .container {
+            max-width: 900px;
+        }
+        .glass-bg {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .pulse-animation {
+            animation: pulse-border 1.5s infinite;
+        }
+        @keyframes pulse-border {
+            0% {
+                box-shadow: 0 0 0 0 rgba(147, 197, 253, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(147, 197, 253, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(147, 197, 253, 0);
+            }
+        }
+        .loader {
+            border: 4px solid #333;
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result-item {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 flex items-center justify-center min-h-screen">
+    <div class="container mx-auto p-6 rounded-3xl shadow-xl glass-bg">
+        <h1 class="text-3xl sm:text-4xl font-bold mb-6 text-center text-blue-300">Network Scanner</h1>
+        <p class="text-center text-gray-400 mb-8">Scan a target IP address for live hosts, open ports, and potential vulnerabilities.</p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 mb-8">
+            <input type="text" id="ipInput" placeholder="Enter target IP (IPv4, IPv6)"
+                   class="flex-grow p-3 rounded-xl bg-gray-800 text-gray-200 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300">
+            <button id="scanButton" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-blue-700 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 pulse-animation">
+                <span id="buttonText">Start Scan</span>
+                <div id="loader" class="hidden loader mx-auto"></div>
+            </button>
+        </div>
+
+        <div id="results" class="bg-gray-900 rounded-2xl p-6 shadow-inner">
+            <div id="statusMessage" class="text-center text-gray-500 italic mb-4">Results will appear here.</div>
+        </div>
+        <div class="mt-8 p-6 bg-gray-800 rounded-xl text-center text-gray-300">
+            <h3 class="text-xl font-bold text-blue-300 mb-2">About Us</h3>
+            <p class="mb-2"><span class="font-semibold">Created by:</span> Ashish</p>
+            <p class="mb-2"><span class="font-semibold">Vision:</span> To provide a simple, reliable, and intuitive network scanning tool that helps users understand the security and accessibility of their networks.</p>
+            <p><span class="font-semibold">Goal:</span> Empower users with clear insights about live hosts, open ports, and potential vulnerabilities, while promoting responsible and ethical scanning practices.</p>
+        </div>
+        <!-- The Modal for Alerts -->
+        <div id="alertModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="bg-gray-800 rounded-xl p-6 shadow-2xl max-w-sm w-full border border-gray-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-red-400">Error</h3>
+                    <button id="closeAlert" class="text-gray-400 hover:text-white">&times;</button>
+                </div>
+                <p id="alertMessage" class="text-gray-300"></p>
+            </div>
+        </div>
+        
+
+    </div>
+
+    <script>
+        const ipInput = document.getElementById('ipInput');
+        const scanButton = document.getElementById('scanButton');
+        const buttonText = document.getElementById('buttonText');
+        const loader = document.getElementById('loader');
+        const resultsDiv = document.getElementById('results');
+        const statusMessage = document.getElementById('statusMessage');
+        const alertModal = document.getElementById('alertModal');
+        const alertMessage = document.getElementById('alertMessage');
+        const closeAlert = document.getElementById('closeAlert');
+
+        function showAlert(message) {
+            alertMessage.textContent = message;
+            alertModal.classList.remove('hidden');
+            alertModal.classList.add('flex');
+        }
+
+        closeAlert.addEventListener('click', () => {
+            alertModal.classList.remove('flex');
+            alertModal.classList.add('hidden');
+        });
+
+        // Updated validation to accept IPv4, IPv6, or hostname
+       function isValidIP(ip) { 
+            // Only ensure the input is non-empty
+            return ip && ip.trim() !== '';
+        }
+        scanButton.addEventListener('click', async () => {
+            const ipAddress = ipInput.value.trim();
+            if (!isValidIP(ipAddress)) {
+                showAlert('Please enter a valid IPv4, IPv6, or hostname.');
+                return;
+            }
+
+            scanButton.disabled = true;
+            scanButton.classList.remove('pulse-animation');
+            buttonText.classList.add('hidden');
+            loader.classList.remove('hidden');
+            statusMessage.textContent = 'Scanning in progress... This may take a moment.';
+            resultsDiv.innerHTML = `<div id="statusMessage" class="text-center text-gray-500 italic mb-4">Scanning in progress... This may take a moment.</div>`;
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/scan?ip=${encodeURIComponent(ipAddress)}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+
+                statusMessage.textContent = '';
+                resultsDiv.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-4 text-gray-200">Scan Results for ${ipAddress}</h2>
+                    <div id="hostDetails" class="mb-6"></div>
+                    <div id="portDetails"></div>
+                `;
+
+                const hostDetailsDiv = document.getElementById('hostDetails');
+                const portDetailsDiv = document.getElementById('portDetails');
+
+                if (data.error) {
+                    showAlert(data.error);
+                    resultsDiv.innerHTML = `<div id="statusMessage" class="text-center text-gray-500 italic mb-4">${data.error}</div>`;
+                    return;
+                }
+
+                if (data.status === 'down') {
+                    hostDetailsDiv.innerHTML = `<p class="text-red-400">Host is down or unreachable.</p>`;
+                } else {
+                    hostDetailsDiv.innerHTML = `
+                        <div class="result-item py-2">
+                            <h3 class="font-semibold text-lg text-blue-300">Status</h3>
+                            <p class="text-green-400 font-medium">${data.status}</p>
+                        </div>
+                        <div class="result-item py-2">
+                            <h3 class="font-semibold text-lg text-blue-300">MAC Address</h3>
+                            <p class="text-gray-300">${data.mac_address || 'Not Found'}</p>
+                        </div>
+                    `;
+
+                    if (data.ports.length > 0) {
+                        let portHtml = '<h3 class="font-semibold text-xl text-blue-300 my-4">Open Ports & Services</h3>';
+                        data.ports.forEach(port => {
+                            portHtml += `
+                                <div class="result-item py-2">
+                                    <p class="text-gray-300">
+                                        <span class="font-bold text-green-400">${port.port}</span>/${port.protocol} - ${port.service}
+                                        ${port.version ? `<br><span class="text-sm text-gray-400">Version: ${port.version}</span>` : ''}
+                                        ${port.cpe ? `<br><span class="text-xs text-gray-500 italic">CPE: ${port.cpe}</span>` : ''}
+                                    </p>
+                                </div>
+                            `;
+                        });
+                        portDetailsDiv.innerHTML = portHtml;
+                        portDetailsDiv.innerHTML += `<p class="mt-4 text-sm italic text-gray-500">
+                            Vulnerabilities are inferred from service versions. For a full scan, you would need dedicated vulnerability scanners.
+                        </p>`;
+                    } else {
+                        portDetailsDiv.innerHTML = `<p class="text-yellow-400">No open ports found.</p>`;
+                    }
+                }
+
+            } catch (error) {
+                console.error('Scan failed:', error);
+                showAlert('Failed to connect to the backend or an error occurred during the scan. Please ensure the Python server is running.');
+            } finally {
+                scanButton.disabled = false;
+                scanButton.classList.add('pulse-animation');
+                buttonText.classList.remove('hidden');
+                loader.classList.add('hidden');
+            }
+        });
+
+        ipInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                scanButton.click();
+            }
+        });
+    </script>
+</body>
+</html>
